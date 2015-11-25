@@ -56,7 +56,7 @@ function makeLibrary(sheet,addHeader){
      
      code += 'var BASEURL_="'+basePath+'";\n';
      if(addHeader){
-       code += HtmlService.createHtmlOutputFromFile('SharedLibraryFunctions').getContent() + "\n";
+       code += ScriptApp.getResource('SharedLibraryFunctions').getDataAsString() + "\n";
      }
       
       
