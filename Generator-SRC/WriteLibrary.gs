@@ -1,10 +1,10 @@
-function writeLibraries(){
+function writeLibraries_(name){
   var skipSheets = ["Template","CurrentApis"];
+
   var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
   
-  
   for(var i in sheets){
-    if(skipSheets.indexOf(sheets[i].getName()) == -1){
+    if(skipSheets.indexOf(sheets[i].getName()) == -1 || (name && sheets[i].getName() == name)){
       
       
       var ret = makeLibrary(sheets[i])
