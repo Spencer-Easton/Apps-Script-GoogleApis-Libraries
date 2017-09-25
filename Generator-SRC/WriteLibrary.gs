@@ -1,26 +1,32 @@
-function writeLibraries(){
+function writeLibraries_(name){
   var skipSheets = ["Template","CurrentApis"];
+
   var sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
-  
   
   for(var i in sheets){
     if(skipSheets.indexOf(sheets[i].getName()) == -1){
-      
-      
-      var ret = makeLibrary(sheets[i])
-      var libraryProject = 
-          { "files": 
-           [
-             {
-               "name": ret.fileName,
-               "type": "server_js",
-               "source": ret.code
-             }
-           ]
-          };
-      
-      try{createNewProject(ret.fileName,libraryProject,libOutputfolderId);}
-      catch(e){Logger.log(e)}
+      if ((name && sheets[i].getName() == name) || !name){
+        
+        var ret = makeLibrary(sheets[i])
+        var libraryProject = 
+            { "files": 
+             [
+               {
+                 "name": ret.fileName,
+                 "type": "server_js",
+                 "source": ret.code
+               }
+             ]
+            };
+        
+        try{
+          createNewProject(ret.fileName,libraryProject,libOutputfolderId);
+        }catch(e){
+          Logger.log(e);
+          var folder = DriveApp.getFolderById(libOutputfolderId);
+          folder.createFile(ret.fileName+"-dump", ret.code, MimeType.PLAIN_TEXT);
+        }
+      }
     }
   }
 }
@@ -75,6 +81,8 @@ function makeLibrary(sheet,addHeader){
 function writeService(serviceObj){
   var serviceName = JSON.parse(serviceObj[0]).id.split('.')[1];
   var serviceFunctions = ""; // ['self_.'+serviceName+' = function(){};'];
+  /*var serviceRoot = 'self_.'+serviceName;
+  var serviceFunctions = '\n\n'+serviceRoot+' = function(){};';*/
   for(var i in serviceObj){
     if(serviceObj[i] !== ""){
       serviceFunctions += writeFunction(JSON.parse(serviceObj[i]));
@@ -82,15 +90,18 @@ function writeService(serviceObj){
   }
   return serviceFunctions
 }
-function writeFunction(functionObj){
+function writeFunction(functionObj, serviceRoot){
   var method = functionObj.method;
   var postBody = functionObj.postBody;
-  var url = ("\""+ functionObj.urlPath.replace(/\{/g,"\"+").replace(/\}/g,"+\"") + "\"").replace(/\+\"\"/g,'');
+  var url = ("\""+ functionObj.urlPath.replace(/\{\+?/g,"\"+").replace(/\}/g,"+\"") + "\"");
   var id = functionObj.id.split('.');
   var service = id.shift();
   var functionId = id.map(function(word,i){return (i == 0)?word: word.charAt(0).toUpperCase() + word.slice(1)}).join('');
+  //var functionId = id.pop();
   var resourceName = functionObj.resource || "remove";
   var fetchMethod = functionObj.fetchMethod;
+  
+  var org_params = (functionObj.params === undefined) ? [] : functionObj.params.slice();
   var params = functionObj.params || [];
   if(postBody){params.push(postBody+"Resource")}
   params.push("options");     
@@ -107,13 +118,10 @@ function writeFunction(functionObj){
         jsDoc += '* @param {object} options Keypair of all optional parameters for this call\n';
       }else if(params[i].indexOf("Resource") != -1){
         jsDoc += '* @param {object} '+params[i]+' An object containing the '+params[i]+' for this method\n';
-      }else
-      {
+      }else{
         jsDoc += '* @param {' + functionObj.paramDesc[params[i]].type + '} '+ params[i] + ' ' + functionObj.paramDesc[params[i]].description + '\n';
         
       }
-      
-      
     }
   }
   
@@ -122,14 +130,16 @@ function writeFunction(functionObj){
   }
   jsDoc += '*\/\n';
   
- 
-  
-  var newFunction = 'function '+functionId+'('+params.join()+'){'+
-    '\n  var path = buildUrl_('+url+',options);';
+  var newFunction = 'function '+functionId+'('+params.join()+'){'
+  //var newFunction = serviceRoot + '["'+ functionId + '"] = function ('+params.join()+'){';
+  org_params.map(function(x) {
+    if(x!=="options"){newFunction += '\n  options.'+x+' = '+x+';'};
+  }); 
+  newFunction +='\n  var path = buildUrl_('+url+',options);';
   if(postBody){
-    newFunction +='\n  var callOptions = {method:"'+method+'",payload:JSON.stringify('+(postBody + 'Resource')+')};' 
+    newFunction += '\n  var callOptions = {method:"'+method+'",payload:JSON.stringify('+(postBody + 'Resource')+')};';
   }else{
-    newFunction +='\n  var callOptions = {method:"'+method+'"};';
+    newFunction += '\n  var callOptions = {method:"'+method+'"};';
   }                  
   
   if(fetchMethod === "CALL"){
@@ -139,7 +149,7 @@ function writeFunction(functionObj){
     newFunction += '\n  var '+resourceName+'Items = CALLPAGE_(path,callOptions,"items");'
     newFunction += '\n  return '+resourceName+'Items;';
   }
-  newFunction += '\n}\n';
+  newFunction += '\n};\n';
   
   return jsDoc+newFunction; 
 }
