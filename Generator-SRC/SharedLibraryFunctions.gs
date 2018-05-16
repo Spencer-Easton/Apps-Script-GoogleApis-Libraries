@@ -54,12 +54,12 @@ function CALLPAGE_(path,options, returnParamPath){
   for(option in options){
     fetchOptions[option] = options[option];
   }
-  var url = BASEURL_ + path;
+  var url = BASEURL_ + path;  
   var returnArray = [];
   var nextPageToken;
   do{
     if(nextPageToken){
-      url += "?pageToken=" + nextPageToken;
+      url = buildUrl_(url, {pageToken:nextPageToken});
     }
     var results = UrlFetchApp.fetch(url, fetchOptions);
     if(results.getResponseCode() != 200){
@@ -69,6 +69,7 @@ function CALLPAGE_(path,options, returnParamPath){
       nextPageToken = resp.nextPageToken;
       returnArray  = returnArray.concat(resp[returnParamPath])
     }
+    url = BASEURL_ + path;
   }while(nextPageToken);
   return returnArray;
 }
@@ -85,5 +86,5 @@ function buildUrl_(url, params) {
   var paramString = Object.keys(params).map(function(key) {
     return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
   }).join('&');
-  return url + (url.indexOf('?') >= 0 ? '&' : '?') + paramString;
+  return url + (url.indexOf('?') >= 0 ? '&' : '?') + paramString;  
 }

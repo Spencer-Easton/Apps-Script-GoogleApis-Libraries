@@ -6,7 +6,7 @@ var discoveryUrl = "https://www.googleapis.com";  // GAE endpoint would look lik
 // 1. Run getApiHeaders
 // 2. Run getAllApiDetails
 // 3. Set the output folder Id
-var libOutputfolderId = "0B_j9_-NbJQQDX2pzZVRIMFo4a3c";
+var libOutputfolderId = "1mJj4EHW8s5Uz06peimFDcc3FE_aBUOaY";
 
 // 4. Run writeLibraries
 
@@ -46,9 +46,10 @@ function getApiHeaders() {
 
 function getAllApiDetails(){
   var ss = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("CurrentApis");
-  var apis = ss.getRange(1, 1, ss.getLastRow(), 2).getValues();
+  var apis = ss.getRange(1, 1, ss.getLastRow(), 6).getValues();
   
   for(var i = 0; i < apis.length;i++){
+    if(apis[i][5] == false){continue;}        
     getApi(apis[i][0],apis[i][1]);
   }
 }
