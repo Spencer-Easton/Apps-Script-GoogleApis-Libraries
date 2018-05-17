@@ -4,8 +4,8 @@ function createNewProject(projectName,content,folderId){
   var newProject = ScriptAPILibrary.projectsCreate({title: projectName});
   content.files[0].lastModifyUser = newProject.creator;    
   var manifest = ScriptAPILibrary.projectsGetContent(newProject.scriptId).files[0];
-  content.files.push(manifest);
-  var results = ScriptAPILibrary.projectsUpdateContent(newProject.scriptId, content);
+  content.files.push(manifest); 
+ var results = ScriptAPILibrary.projectsUpdateContent(newProject.scriptId, content); 
   moveFile(newProject.scriptId,folderId);
 }
 

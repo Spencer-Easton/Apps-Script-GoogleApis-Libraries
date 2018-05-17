@@ -84,7 +84,6 @@ function makeLibrary(sheet,addHeader){
 
 function writeService(serviceObj){
   var serviceFunctionsList = [];
-  var serviceName = JSON.parse(serviceObj[0]).id.split('.')[1];
   var serviceFunctions = ""; // ['self_.'+serviceName+' = function(){};'];
   for(var i in serviceObj){
     if(serviceObj[i] !== ""){
@@ -99,11 +98,16 @@ function writeService(serviceObj){
 
 function writeFunction(functionObj){  
   var method = functionObj.method;
-  var postBody = functionObj.postBody;
-  var url = ("\""+ functionObj.urlPath.replace(/\{/g,"\"+").replace(/\}/g,"+\"") + "\"").replace(/\+\"\"/g,'');
-  var id = functionObj.id.split('.');
+  var postBody = functionObj.postBody; 
+  
+  //var url = ("\""+ functionObj.urlPath.replace(/\{/g,"\"+").replace(/\}/g,"+\"") + "\"");  
+  var url = "\"" + functionObj.urlPath;
+  url = url.replace('+',''); //WHY do they add the + in the URL
+  url = (url.replace(/\{/g,"\"+").replace(/\}/g,"+\"") + "\"").replace(/\+\"\"/g,'');  
+  var id = functionObj.id.split('.');  
   var service = id.shift();
-  var functionId = id.map(function(word,i){return (i == 0)?word: word.charAt(0).toUpperCase() + word.slice(1)}).join('');
+  
+  var functionId = id.map(function(word,i){return (i == 0)?word: word.charAt(0).toUpperCase() + word.slice(1)}).join('');     
   var resourceName = functionObj.resource || "remove";
   var fetchMethod = functionObj.fetchMethod;
   var params = functionObj.params || [];
@@ -117,14 +121,20 @@ function writeFunction(functionObj){
   jsDoc += "*\n";
   
   if(params.length > 0){
-    for(var i in params){
+    for(var i in params){      
       if(params[i] === "options"){
         jsDoc += '* @param {object} options Keypair of all optional parameters for this call\n';
       }else if(params[i].indexOf("Resource") != -1){
         jsDoc += '* @param {object} '+params[i]+' An object containing the '+params[i]+' for this method\n';
       }else
       {
-        jsDoc += '* @param {' + functionObj.paramDesc[params[i]].type + '} '+ params[i] + ' ' + functionObj.paramDesc[params[i]].description + '\n';
+        var description = functionObj.paramDesc[params[i]].description;
+        
+        //HACK
+        description = description.replace(/\*/g,'X')
+        description = description.replace(/\n/g,'')
+        
+        jsDoc += '* @param {' + functionObj.paramDesc[params[i]].type + '} '+ params[i] + ' ' + description + '\n';
         
       }
       

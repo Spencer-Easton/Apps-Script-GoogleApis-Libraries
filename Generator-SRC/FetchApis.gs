@@ -11,7 +11,7 @@ var libOutputfolderId = "1mJj4EHW8s5Uz06peimFDcc3FE_aBUOaY";
 // 4. Run writeLibraries
 
 function makeLib(){
-  var sheetName = "youtube"
+  var sheetName = "chat"
   writeLibraries_(sheetName);
 }
 
@@ -25,7 +25,7 @@ function getApiHeaders() {
   if(!ss){
     ss = SpreadsheetApp.getActiveSpreadsheet().insertSheet('CurrentApis',{template:SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Template")})
  }
-  //   Logger.log(items)
+  
  for (var i in items){
   thisApi = [items[i].name,		
                 items[i].version,	
