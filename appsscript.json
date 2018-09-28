@@ -1,0 +1,16 @@
+{
+  "timeZone": "America/New_York",
+  "dependencies": {
+    "libraries": [{
+      "userSymbol": "ScriptAPILibrary",
+      "libraryId": "1_Yv878TjVM-1QG3KnNYgLAm3QUJys-WQ89Pmjthyf5me_tJYXSmkiW8a",
+      "version": "2"
+    }]
+  },  
+  "exceptionLogging": "STACKDRIVER",
+  "oauthScopes": ["https://www.googleapis.com/auth/script.projects", 
+                  "https://www.googleapis.com/auth/drive", 
+                  "https://www.googleapis.com/auth/script.external_request", 
+                  "https://www.googleapis.com/auth/spreadsheets"                  
+                 ]
+}

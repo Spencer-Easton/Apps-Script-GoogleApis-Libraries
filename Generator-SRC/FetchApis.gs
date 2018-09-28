@@ -6,20 +6,26 @@ var discoveryUrl = "https://www.googleapis.com";  // GAE endpoint would look lik
 // 1. Run getApiHeaders
 // 2. Run getAllApiDetails
 // 3. Set the output folder Id
-var libOutputfolderId = "0B_j9_-NbJQQDX2pzZVRIMFo4a3c";
+var libOutputfolderId = "1mJj4EHW8s5Uz06peimFDcc3FE_aBUOaY";
 
 // 4. Run writeLibraries
+
+function makeLib(){
+  var sheetName = "chat"
+  writeLibraries_(sheetName);
+}
+
 
 function getApiHeaders() {
  var ss = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CurrentApis'),
      url = discoveryUrl + "/discovery/v1/apis";
      items = JSON.parse(UrlFetchApp.fetch(url).getContentText()).items,
-     apiList = [], thisApi;
+     apiList = [], thisApi = [];
   
   if(!ss){
     ss = SpreadsheetApp.getActiveSpreadsheet().insertSheet('CurrentApis',{template:SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Template")})
  }
-  //   Logger.log(items)
+  
  for (var i in items){
   thisApi = [items[i].name,		
                 items[i].version,	
@@ -40,52 +46,59 @@ function getApiHeaders() {
 
 function getAllApiDetails(){
   var ss = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("CurrentApis");
-  var apis = ss.getRange(1, 1, ss.getLastRow(), 2).getValues();
+  var apis = ss.getRange(1, 1, ss.getLastRow(), 6).getValues();
   
   for(var i = 0; i < apis.length;i++){
+    if(apis[i][5] == false){continue;}        
     getApi(apis[i][0],apis[i][1]);
   }
 }
 
-
+function writeLibraries(){
+  writeLibraries_();
+}
 
 function getApi(api,ver){
- var url = discoveryUrl + "/discovery/v1/apis/"+api+"/"+ver+"/rest",
-     apiData = JSON.parse(UrlFetchApp.fetch(url)),
-     ss = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(api),
-     apiParams = [],apiScopes = [];
-     
- if(!ss){
-    ss = SpreadsheetApp.getActiveSpreadsheet().insertSheet(api,{template:SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Template")})
- }
- 
- ss.clear();
- ss.appendRow([apiData.baseUrl])
- 
- ss.appendRow(["Scopes"]);
- if(apiData.auth){
- for(var scope in apiData.auth.oauth2.scopes){
-  apiScopes.push(scope);
- }
- }else{
-  apiScopes = ["none"]
- }
- ss.appendRow(apiScopes) 
- 
- 
- ss.appendRow(["Parameters"])
- for(var i in apiData.parameters){
-  apiParams.push(i);
- }
- ss.appendRow(apiParams)
- 
- 
- ss.appendRow(["DocumentationUrl"]);
- ss.appendRow([apiData.documentationLink]);
- 
- ss.appendRow(["Resources"]) 
- getResources(ss,apiData);
-
+  try {
+    var url = discoveryUrl + "/discovery/v1/apis/"+api+"/"+ver+"/rest",
+      apiData = JSON.parse(UrlFetchApp.fetch(url)),
+        ss = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(api),
+          apiParams = [],apiScopes = [];
+    
+    if(!ss){
+      ss = SpreadsheetApp.getActiveSpreadsheet().insertSheet(api, 2, {template:SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Template")})
+    }
+    
+    ss.clear();
+    ss.appendRow([apiData.baseUrl])
+    
+    ss.appendRow(["Scopes"]);
+    if(apiData.auth){
+      for(var scope in apiData.auth.oauth2.scopes){
+        apiScopes.push(scope);
+      }
+    }else{
+      apiScopes = ["none"]
+    }
+    ss.appendRow(apiScopes) 
+    
+    
+    ss.appendRow(["Parameters"])
+    for(var i in apiData.parameters){
+      apiParams.push(i);
+    }
+    ss.appendRow(apiParams)
+    
+    
+    ss.appendRow(["DocumentationUrl"]);
+    ss.appendRow([apiData.documentationLink]);
+    
+    ss.appendRow(["Resources"]) 
+    getResources(ss,apiData);
+  } catch(e) {
+    Logger.log(e)
+  }
+  
 }
 
 
@@ -145,14 +158,14 @@ function getResources(inSS,inObj){
  
     
 function clearAllSheets(){
- var ss  = SpreadsheetApp.getActiveSpreadsheet();
- var sheets = ss.getSheets()
- 
- for(var i in sheets){
-   if(sheets[i].getName() !== "Template"){
-     ss.deleteSheet(sheets[i]);
-   }
- }
+  var skipSheets = ["Template","CurrentApis"];
+  var ss = SpreadsheetApp.getActive();
+  var sheets = ss.getSheets();
+  for(var i = 0; i < sheets.length;i++){
+    if(skipSheets.indexOf(sheets[i].getName()) == -1){
+      ss.deleteSheet(sheets[i]);
+    }
+  }
 }
 
 
