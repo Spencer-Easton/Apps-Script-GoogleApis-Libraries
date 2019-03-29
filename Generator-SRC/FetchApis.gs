@@ -1,20 +1,46 @@
+function onOpen(){
+   var ui = SpreadsheetApp.getUi();
+    var menu = ui.createMenu("Genereate API Libraries");
+    menu.addItem("Setup", "setUpSheet");
+    menu.addItem("Fetch API List", "getApiHeaders");
+    menu.addItem("Build Libraries", "buildLibraries");
+    menu.addToUi();
+}
+
+
 // 0. Run clearAllSheets if you want to easily remove all the generated sheets. 
 
 // 0a. If you need to change the google APIs Url to a GAE endpoint
-var discoveryUrl = "https://www.googleapis.com";  // GAE endpoint would look like -> https://MyProjectId.appspot.com/_ah/api
+var discoveryUrl = "https://www.googleapis.com";  // GAE endpoint would look like -> https://grab-n-go-test.appspot.com/_ah/api
 
 // 1. Run getApiHeaders
 // 2. Run getAllApiDetails
 // 3. Set the output folder Id
-var libOutputfolderId = "1mJj4EHW8s5Uz06peimFDcc3FE_aBUOaY";
+var libOutputfolderId =  PropertiesService.getUserProperties().getProperty("folderId");
 
 // 4. Run writeLibraries
 
-function makeLib(){
-  var sheetName = "chat"
-  writeLibraries_(sheetName);
+
+
+function buildLibraries(){
+   getAllApiDetails();
+   writeLibraries();
 }
 
+function setUpSheet(){
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var tsheet = ss.insertSheet("-", 0)
+  tsheet.deleteRows(2, 999)
+  var sheets = ss.getSheets();
+  for(var i = 1 ; i < sheets.length;i++){
+    ss.deleteSheet(sheets[i])
+  }
+  tsheet.setName("Template");
+  
+  var folderId = Browser.inputBox("Enter folderId where Libraries are to be saved");
+  PropertiesService.getUserProperties().setProperty("folderId", folderId);
+                          
+}
 
 function getApiHeaders() {
  var ss = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CurrentApis'),
@@ -22,6 +48,7 @@ function getApiHeaders() {
      items = JSON.parse(UrlFetchApp.fetch(url).getContentText()).items,
      apiList = [], thisApi = [];
   
+
   if(!ss){
     ss = SpreadsheetApp.getActiveSpreadsheet().insertSheet('CurrentApis',{template:SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Template")})
  }
@@ -40,6 +67,16 @@ function getApiHeaders() {
  ss.clear();
  var range = ss.getRange(1, 1, apiList.length, 5);
  range.setValues(apiList);
+ SpreadsheetApp.flush();
+  //Browser.msgBox("Insert Checkboxes into Column F of CurrentApis sheet")
+  var checkBoxRange = ss.getRange(1,6,apiList.length,1);
+   var enforceCheckbox = SpreadsheetApp.newDataValidation();
+  enforceCheckbox.requireCheckbox();
+  enforceCheckbox.setAllowInvalid(false);
+  enforceCheckbox.build();
+
+  checkBoxRange.setDataValidation(enforceCheckbox);
+  
  
 }
 
@@ -49,7 +86,13 @@ function getAllApiDetails(){
   var apis = ss.getRange(1, 1, ss.getLastRow(), 6).getValues();
   
   for(var i = 0; i < apis.length;i++){
-    if(apis[i][5] == false){continue;}        
+    if(apis[i][5] == false){
+      var oldSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(apis[i][0]+'-'+apis[i][1]);
+      if(oldSheet){
+         SpreadsheetApp.getActiveSpreadsheet().deleteSheet(oldSheet)
+      }
+      continue;
+    }        
     getApi(apis[i][0],apis[i][1]);
   }
 }
@@ -62,11 +105,11 @@ function getApi(api,ver){
   try {
     var url = discoveryUrl + "/discovery/v1/apis/"+api+"/"+ver+"/rest",
       apiData = JSON.parse(UrlFetchApp.fetch(url)),
-        ss = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(api),
+        ss = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(api+'-'+ver),
           apiParams = [],apiScopes = [];
     
     if(!ss){
-      ss = SpreadsheetApp.getActiveSpreadsheet().insertSheet(api, 2, {template:SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Template")})
+      ss = SpreadsheetApp.getActiveSpreadsheet().insertSheet(api+'-'+ver, 2, {template:SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Template")})
     }
     
     ss.clear();
